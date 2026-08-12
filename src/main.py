@@ -243,8 +243,14 @@ def fmt_offer(item, score, reasons, search_name, median_ppm2):
     safe_name = html.escape(search_name)
     safe_portal = html.escape(item["portal"].upper())
     reasons_txt = "\n".join("✅ " + html.escape(r) for r in reasons[:4])
+
+    if score >= 75:
+        label = "🔥 MOCNA OKAZJA"
+    else:
+        label = "👀 WARTO SPRAWDZIĆ"
+
     return (
-        f"🔥 <b>NOWA OKAZJA — {score}/100</b>\n"
+        f"<b>{label} – {score}/100</b>\n"
         f"📍 {safe_name}\n"
         f"🌐 {safe_portal}\n"
         f"💰 <b>{money(item['price'])}</b>\n"
