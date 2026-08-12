@@ -1,0 +1,22 @@
+{
+  "threshold": 60,
+  "searches": [
+    {
+      "name": "Gliwice — przykładowe wyszukiwanie",
+      "url": "WKLEJ_TUTAJ_PELNY_LINK_DO_WYNIKOW_WYSZUKIWANIA",
+      "max_price": 350000,
+      "min_area": 35,
+      "max_area": 65,
+      "rooms": [
+        2,
+        3
+      ],
+      "exclude": [
+        "kamienica",
+        "udział",
+        "licytacja",
+        "TBS"
+      ]
+    }
+  ]
+}
