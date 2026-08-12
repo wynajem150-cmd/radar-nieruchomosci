@@ -203,38 +203,86 @@ def score_listing(item, median_ppm2):
     score = 0
     reasons = []
 
-    if ratio <= 0.75:
-        score += 55
+    # 1. Cena za m² względem pozostałych ofert
+    if ratio <= 0.70:
+        score += 60
         reasons.append(f"{round((1-ratio)*100)}% poniżej mediany ceny/m²")
-    elif ratio <= 0.82:
-        score += 47
+    elif ratio <= 0.78:
+        score += 52
+        reasons.append(f"{round((1-ratio)*100)}% poniżej mediany ceny/m²")
+    elif ratio <= 0.85:
+        score += 44
         reasons.append(f"{round((1-ratio)*100)}% poniżej mediany ceny/m²")
     elif ratio <= 0.90:
-        score += 37
+        score += 36
         reasons.append(f"{round((1-ratio)*100)}% poniżej mediany ceny/m²")
     elif ratio <= 0.95:
-        score += 27
+        score += 25
         reasons.append(f"{round((1-ratio)*100)}% poniżej mediany ceny/m²")
     elif ratio <= 1.00:
-        score += 15
-        reasons.append("poniżej mediany ceny/m²")
+        score += 12
+        reasons.append("cena/m² poniżej mediany")
+
+    # 2. Dobry metraż pod flipa
+    if 35 <= item["area"] <= 60:
+        score += 10
+        reasons.append("dobry metraż 35–60 m²")
+    elif 28 <= item["area"] < 35:
+        score += 5
+        reasons.append("mały, płynny metraż")
+
+    # 3. Liczba pokoi
+    if item["rooms"] in (2, 3):
+        score += 10
+        reasons.append(f"{item['rooms']} pokoje")
+    elif item["rooms"] == 1:
+        score += 3
 
     text_lower = item["text"].lower()
-    found = [w for w in POSITIVE_WORDS if w in text_lower]
+
+    # 4. Pozytywne sygnały
+    positive = [
+        "do remontu",
+        "do odświeżenia",
+        "pilnie",
+        "do negocjacji",
+        "bezpośrednio",
+        "bez pośredników",
+        "balkon",
+        "winda",
+        "blok"
+    ]
+
+    found = [word for word in positive if word in text_lower]
+
     if found:
-        bonus = min(15, 5 + 2 * len(found))
+        bonus = min(12, 3 + len(found) * 2)
         score += bonus
-        reasons.append("sygnały: " + ", ".join(found[:3]))
+        reasons.append("plusy: " + ", ".join(found[:3]))
 
-    if item["rooms"] in (2, 3):
-        score += 8
-        reasons.append(f"{item['rooms']} pokoje")
+    # 5. Oferty, których raczej nie chcemy pod flipa
+    if "kamienica" in text_lower:
+        score -= 35
 
-    if 35 <= item["area"] <= 65:
-        score += 7
-        reasons.append("płynny metraż 35–65 m²")
+    if "udział" in text_lower:
+        score -= 60
 
-    return min(score, 100), reasons, ratio
+    if "licytacja" in text_lower:
+        score -= 60
+
+    if "tbs" in text_lower:
+        score -= 60
+
+    if "lokal użytkowy" in text_lower:
+        score -= 50
+
+    if "bez księgi wieczystej" in text_lower:
+        score -= 20
+
+    # Wynik zawsze 0–100
+    score = max(0, min(score, 100))
+
+    return score, reasons, ratio
 
 def money(v):
     return f"{v:,.0f}".replace(",", " ") + " zł"
