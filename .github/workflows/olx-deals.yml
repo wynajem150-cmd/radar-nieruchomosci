@@ -30,7 +30,7 @@ jobs:
       - name: Uruchom radar okazji OLX
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OLX_TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
         run: python src/olx_deals.py
 
       - name: Zapisz stan radaru
