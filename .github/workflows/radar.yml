@@ -36,13 +36,19 @@ jobs:
           export SEARCH_CONFIG_JSON="$(python -c 'import json,os; c=json.loads(os.environ["SEARCH_CONFIG_JSON"]); c["threshold"]=60; print(json.dumps(c))')"
           python src/main.py
 
-      - name: Zapisz znalezione oferty
+      - name: Dzienny raport Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python src/daily_report.py
+
+      - name: Zapisz stan i statystyki
         run: |
-          if git diff --quiet -- seen.json; then
+          if git diff --quiet -- seen.json daily_stats.json; then
             exit 0
           fi
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add seen.json
-          git commit -m "Aktualizacja ofert"
+          git add seen.json daily_stats.json
+          git commit -m "Aktualizacja radaru"
           git push
