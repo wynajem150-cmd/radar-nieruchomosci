@@ -2,6 +2,11 @@ name: Radar wakacji
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/vacation_deals.py'
+      - '.github/workflows/vacation-deals.yml'
   schedule:
     - cron: "8,38 * * * *"
 
@@ -11,7 +16,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
 
     steps:
       - name: Pobierz repo
@@ -34,12 +39,14 @@ jobs:
         run: python src/vacation_deals.py
 
       - name: Raport dzienny
+        if: github.event_name != 'push'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
         run: python src/vacation_daily_report.py
 
       - name: Zapisz stan radaru
+        if: github.event_name != 'push'
         run: |
           if git diff --quiet -- vacation_state.json vacation_daily_stats.json; then
             exit 0
