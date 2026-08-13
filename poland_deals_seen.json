@@ -1,4 +1,33 @@
 {
-  "seen": {},
-  "initialized": false
+  "seen": {
+    "e064cb704388952f965248be": {
+      "price": 179,
+      "discount": 51
+    },
+    "e1be53ab7fd17865625fbdae": {
+      "price": 249,
+      "discount": 52
+    },
+    "50ba998ba87fc821cbdf5511": {
+      "price": 239,
+      "discount": 59
+    },
+    "44dace1bbe67d06c47e20183": {
+      "price": 249,
+      "discount": 31
+    },
+    "45afc8c749f6226d2d4ba245": {
+      "price": 299,
+      "discount": 50
+    },
+    "4b046930d0e97650ac921479": {
+      "price": 264,
+      "discount": 37
+    },
+    "0cf13feebab7bac24f4e55a6": {
+      "price": 254,
+      "discount": 32
+    }
+  },
+  "initialized": true
 }
