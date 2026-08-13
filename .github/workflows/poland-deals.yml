@@ -2,13 +2,8 @@ name: Radar Polska
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src/poland_deals.py'
-      - '.github/workflows/poland-deals.yml'
   schedule:
-    - cron: "13,43 * * * *"
+    - cron: "11,41 * * * *"
 
 permissions:
   contents: write
@@ -17,6 +12,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: radar-polska
+      cancel-in-progress: false
 
     steps:
       - name: Pobierz repo
@@ -40,11 +38,10 @@ jobs:
 
       - name: Zapisz stan
         run: |
-          if git diff --quiet -- poland_deals_seen.json; then
-            exit 0
-          fi
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
           git add poland_deals_seen.json
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "Aktualizacja radaru Polska"
+          git pull --rebase origin main
           git push
