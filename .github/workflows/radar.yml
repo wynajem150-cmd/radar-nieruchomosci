@@ -1,4 +1,4 @@
-name: Radar nieruchomości
+name: Wszystkie radary
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
 
     steps:
       - name: Pobierz repo
@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
-      - name: Uruchom radar
+      - name: Nieruchomości
         env:
           SEARCH_CONFIG_JSON: ${{ secrets.SEARCH_CONFIG_JSON }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -35,20 +35,37 @@ jobs:
         run: |
           export SEARCH_CONFIG_JSON="$(python -c 'import json,os; c=json.loads(os.environ["SEARCH_CONFIG_JSON"]); c["threshold"]=60; print(json.dumps(c))')"
           python src/main.py
+          python src/daily_report.py
 
-      - name: Dzienny raport Telegram
+      - name: OLX
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python src/daily_report.py
-
-      - name: Zapisz stan i statystyki
+          OLX_TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
         run: |
-          if git diff --quiet -- seen.json daily_stats.json; then
-            exit 0
-          fi
+          python src/olx_deals.py
+          python src/olx_daily_report.py
+
+      - name: Polska
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
+        run: python src/poland_deals.py
+
+      - name: Wakacje
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
+          VACATION_DRY_RUN: "0"
+        run: |
+          python src/vacation_strict.py
+          python src/vacation_daily_report.py
+
+      - name: Zapisz stany
+        run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add seen.json daily_stats.json
-          git commit -m "Aktualizacja radaru"
+          git add seen.json daily_stats.json olx_deals_seen.json olx_daily_stats.json poland_deals_seen.json vacation_state.json vacation_daily_stats.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Aktualizacja wszystkich radarów"
+          git pull --rebase origin main
           git push
