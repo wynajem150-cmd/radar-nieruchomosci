@@ -1,0 +1,45 @@
+name: Radar okazji OLX
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "3,18,33,48 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Pobierz repo
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalacja bibliotek
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Uruchom radar okazji OLX
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python src/olx_deals.py
+
+      - name: Zapisz stan radaru
+        run: |
+          if git diff --quiet -- olx_deals_seen.json; then
+            exit 0
+          fi
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add olx_deals_seen.json
+          git commit -m "Aktualizacja okazji OLX"
+          git push
