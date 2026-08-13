@@ -6,11 +6,11 @@ TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 messages = [
-    "🏖 REALNA OFERTA — DO WERYFIKACJI RABATU/BAGAŻU\n🇧🇬 Bułgaria — Primorsko\n🏨 Belitsa 3★\n⭐ Ocena 4,2/5\n✈️ Katowice → Burgas\n📅 21.08–28.08.2026 | 8 dni / 7 nocy\n🍽 All Inclusive\n🏖 Plaża: 250 m / 350 m\n💰 2169 zł/os. | 4338 zł za 2 osoby\n\n✅ spełnia budżet, termin, długość, lotnisko, wyżywienie, standard, ocenę i plażę\n⚠️ Travelplanet na liście nie potwierdza przeceny ≥25% ani bagażu rejestrowanego — sprawdź przed rezerwacją.\n🔗 https://www.travelplanet.pl/hotele/bulgaria/primorsko/belitsa/",
+    "🔥🔥 SUPER PEREŁKA POLSKA\n🏨 Blue Marine Mielno\n📍 Mielno, zachodniopomorskie\n⭐ 4,5/5\n🍳 Śniadania i obiadokolacje w cenie\n💰 od 260 zł/noc za 2 osoby\n👤 od 130 zł/os./noc\n📉 ok. 60% taniej: 643 zł → 260 zł\n\n🔗 https://travelist.pl/odkryj/baltyk/polska/zachodniopomorskie/mielno\n\nℹ️ Cena „od” — po wejściu sprawdź konkretny termin przed rezerwacją.",
 
-    "🏖 REALNA OFERTA — DO WERYFIKACJI RABATU/BAGAŻU\n🇧🇬 Bułgaria — Słoneczny Brzeg\n🏨 Palace 3★\n⭐ Ocena 4,2/5\n✈️ Katowice → Burgas\n📅 20.08–26.08.2026 | 7 dni / 5 nocy\n🍽 Dwa posiłki (HB)\n🏖 Hotel tuż przy plaży\n💰 2449 zł/os. | 4898 zł za 2 osoby\n\n✅ spełnia budżet, termin, długość, lotnisko, wyżywienie, standard, ocenę i plażę\n⚠️ Travelplanet na liście nie potwierdza przeceny ≥25% ani bagażu rejestrowanego — sprawdź przed rezerwacją.\n🔗 https://www.travelplanet.pl/hotele/bulgaria/sloneczny-brzeg/palace/",
+    "🔥🔥 SUPER PEREŁKA POLSKA\n🏨 Hotel Arka Medical Spa\n📍 Kołobrzeg, zachodniopomorskie\n⭐ 4,6/5\n🍳 Śniadania i obiadokolacje w cenie\n💰 od 249 zł/noc za 2 osoby\n👤 od 125 zł/os./noc\n📉 ok. 52% taniej: 519 zł → 249 zł\n\n🔗 https://travelist.pl/hotele/nad-morzem/sniadania-i-obiadokolacje-w-cenie/sniadania-obiady-i-kolacje-w-cenie\n\nℹ️ Cena „od” — po wejściu sprawdź konkretny termin przed rezerwacją.",
 
-    "🏖 REALNA OFERTA — DO WERYFIKACJI RABATU/BAGAŻU\n🇧🇬 Bułgaria — Primorsko\n🏨 Perla Plaza 3★\n⭐ Ocena 4,1/5\n✈️ Katowice → Burgas\n📅 18.08–25.08.2026 | 8 dni / 7 nocy\n🍽 All Inclusive\n🏖 Hotel tuż przy piaszczystej plaży\n💰 2459 zł/os. | 4918 zł za 2 osoby\n\n✅ spełnia budżet, termin, długość, lotnisko, wyżywienie, standard, ocenę i plażę\n⚠️ Travelplanet na liście nie potwierdza przeceny ≥25% ani bagażu rejestrowanego — sprawdź przed rezerwacją.\n🔗 https://www.travelplanet.pl/hotele/bulgaria/primorsko/perla-plaza/",
+    "🇵🇱 PEREŁKA POLSKA\n🏨 Golden Tulip Gdańsk Residence\n📍 Gdańsk, pomorskie\n⭐ 4,5/5\n🍳 Śniadania i obiadokolacje w cenie\n💰 od 229 zł/noc za 2 osoby\n👤 od 115 zł/os./noc\n📉 ok. 31% taniej: 332 zł → 229 zł\n\n🔗 https://travelist.pl/hotele/nad-morzem/sniadania-i-obiadokolacje-w-cenie/sniadania-obiady-i-kolacje-w-cenie\n\nℹ️ Cena „od” — po wejściu sprawdź konkretny termin przed rezerwacją.",
 ]
 
 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -20,4 +20,4 @@ for message in messages:
     with urllib.request.urlopen(req, timeout=20) as response:
         if response.status != 200:
             raise RuntimeError(f"Telegram HTTP {response.status}")
-print("Wysłano 3 realne oferty wakacyjne.")
+print("Wysłano 3 perełki Polska.")
