@@ -12,7 +12,7 @@ import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 STATE_FILE = Path("olx_deals_seen.json")
-MAX_PRICE = 1000
+MAX_PRICE = 3000
 MIN_PRICE = 80
 THRESHOLD = 65
 
