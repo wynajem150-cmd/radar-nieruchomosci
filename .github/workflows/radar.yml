@@ -32,7 +32,9 @@ jobs:
           SEARCH_CONFIG_JSON: ${{ secrets.SEARCH_CONFIG_JSON }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python src/main.py
+        run: |
+          export SEARCH_CONFIG_JSON="$(python -c 'import json,os; c=json.loads(os.environ["SEARCH_CONFIG_JSON"]); c["threshold"]=60; print(json.dumps(c))')"
+          python src/main.py
 
       - name: Zapisz znalezione oferty
         run: |
