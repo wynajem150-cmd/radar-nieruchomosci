@@ -1,11 +1,14 @@
 import hashlib
+import os
 import re
 from datetime import date, datetime, timedelta
 
 import vacation_deals as v
 from playwright.sync_api import sync_playwright
 
-SAFE_TEST_MODE = True
+# Push zmian w kodzie = bezpieczny test bez Telegrama i bez zapisu stanu.
+# Harmonogram / workflow_dispatch = normalna praca produkcyjna.
+SAFE_TEST_MODE = os.environ.get('VACATION_DRY_RUN', '').strip().lower() in {'1', 'true', 'yes'}
 
 DATE_RE = re.compile(r'(\d{1,2})\.(\d{1,2})\.(\d{4})\s*[-–]\s*(\d{1,2})\.(\d{1,2})\.(\d{4})')
 ITAKA_TOTAL_RE = re.compile(r'Łącznie:\s*([\d\s]+)\s*zł', re.I)
@@ -50,18 +53,15 @@ def meal(text):
 
 
 def exact_itaka(visible, c):
-    # Link ITAKI otwiera dokładnie wybrany wariant. W jego sekcji znajdują się
-    # data, lotnisko, wyżywienie i cena łączna dla 2 osób.
-    marker = f"Kiedy: {c['start'].day} sie" if c['start'].month == 8 else 'Kiedy:'
     pos = visible.find('Kiedy:')
     while pos >= 0:
-        block = visible[pos:pos+1200]
+        block = visible[pos:pos+1400]
         if c['airport'].lower() in block.lower() and meal(block) == c['board']:
             if str(c['start'].year) in block and str(c['start'].day) in block and str(c['end'].day) in block:
                 m = ITAKA_TOTAL_RE.search(block)
                 if m:
                     total = v.money(m.group(1))
-                    if total % 2 == 0:
+                    if total > 0 and total % 2 == 0:
                         return total // 2, total
         pos = visible.find('Kiedy:', pos+1)
     return None, None
@@ -85,7 +85,7 @@ def exact_tui(visible, c):
     if meal(block) != c['board']:
         return None, None
     total = v.money(tm.group(1))
-    return (total // 2, total) if total % 2 == 0 else (None, None)
+    return (total // 2, total) if total > 0 and total % 2 == 0 else (None, None)
 
 
 def exact_variant(visible, c):
@@ -93,8 +93,40 @@ def exact_variant(visible, c):
 
 
 def standard(full):
-    m = re.search(r'([3-5])\s*gwiazdk(?:owy|owego|i)', full, re.I)
-    return int(m.group(1)) if m else None
+    # Najpierw dane strukturalne / oficjalna kategoria, dopiero potem fallback tekstowy.
+    patterns = (
+        r'"stars"\s*:\s*([3-5])\b',
+        r'Kategoria\s+lokalna\s*([3-5])\s*gwiazd',
+        r'\b([3-5])\s*gwiazdk(?:owy|owego|i)',
+    )
+    for pat in patterns:
+        m = re.search(pat, full, re.I)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def official_beach(source, visible, full):
+    low = visible.lower()
+    if source == 'TUI':
+        pos = low.find('położenie:')
+        if pos < 0:
+            pos = low.find('położenie')
+        if pos >= 0:
+            block = visible[pos:pos+1200]
+            ok, dist = v.beach(block)
+            if ok or dist is not None:
+                return ok, dist
+    else:
+        # ITAKA zwykle podaje dystans w oficjalnej sekcji „Plaża”.
+        for marker in ('plaża', 'plaza'):
+            pos = low.find(marker)
+            if pos >= 0:
+                block = visible[pos:pos+1200]
+                ok, dist = v.beach(block)
+                if ok or dist is not None:
+                    return ok, dist
+    return v.beach(full)
 
 
 def verify(page, c):
@@ -116,7 +148,7 @@ def verify(page, c):
     r, scale = v.rating(c['text'] + ' ' + c['meta'] + ' ' + visible[:5000])
     if r is None:
         return None, 'ocena poniżej progu lub niepotwierdzona'
-    beach_ok, beach_m = v.beach(full)
+    beach_ok, beach_m = official_beach(c['source'], visible, full)
     if not beach_ok:
         return None, 'plaża >500 m lub niepotwierdzona'
     if not v.baggage(full):
@@ -127,14 +159,15 @@ def verify(page, c):
     if st is None or st < 3:
         return None, 'standard min. 3★ niepotwierdzony'
 
-    # drugi niezależny odczyt tej samej strony
+    # Drugi niezależny odczyt tej samej strony chroni przed chwilową / błędną ceną.
     page.reload(wait_until='domcontentloaded', timeout=60000)
     page.wait_for_timeout(2200)
     visible2, full2 = v.page_text(page)
     p2, total2 = exact_variant(visible2, c)
     if p2 != p or total2 != total:
         return None, 'cena/konfiguracja zmieniła się przy drugim odczycie'
-    if not v.baggage(full2) or not v.beach(full2)[0]:
+    beach_ok2, _ = official_beach(c['source'], visible2, full2)
+    if not v.baggage(full2) or not beach_ok2:
         return None, 'warunki nie potwierdziły się 2×'
 
     official, ref = v.official_discount(c['source'], c['text'], c['base_price'])
@@ -173,11 +206,18 @@ def run():
         ctx = browser.new_context(viewport={'width': 1440, 'height': 1400}, locale='pl-PL', user_agent='Mozilla/5.0 Chrome/131 Safari/537.36')
         search = ctx.new_page(); detail = ctx.new_page()
         for source, airport, url, party_marker in v.SOURCES:
-            search.goto(url, wait_until='domcontentloaded', timeout=60000); search.wait_for_timeout(2400)
-            visible, _ = v.page_text(search)
-            if party_marker.lower() not in visible.lower():
+            try:
+                search.goto(url, wait_until='domcontentloaded', timeout=60000)
+                search.wait_for_timeout(2400)
+                visible, _ = v.page_text(search)
+                if party_marker.lower() not in visible.lower():
+                    print(source, airport, 'POMINIĘTO: brak potwierdzenia 2 dorosłych')
+                    continue
+                rows = v.cards(search, source, airport)
+            except Exception as exc:
+                print(source, airport, 'BŁĄD:', exc)
                 continue
-            rows = v.cards(search, source, airport); print(source, airport, 'kart:', len(rows))
+            print(source, airport, 'kart:', len(rows))
             for row in rows:
                 checked += 1
                 c = candidate(source, airport, row, today)
@@ -199,7 +239,7 @@ def run():
             sc = v.score(d['price'], discount, c['board'], d['beach_m'], d['transfer']); max_score = max(max_score, sc)
             c.update(d); c.update({'key': key, 'discount': discount, 'score': sc})
             if SAFE_TEST_MODE:
-                print(' SAFE TEST — bez Telegrama'); continue
+                print(' SAFE TEST — bez Telegrama i bez zapisu stanu'); continue
             old = state['alerts'].get(key, {})
             if old and not (d['price'] <= int(old.get('price', d['price']))-100 or discount >= int(old.get('discount', discount))+5):
                 continue
@@ -210,7 +250,10 @@ def run():
 
     if SAFE_TEST_MODE:
         print('SAFE TEST: checked=', checked, 'prefilter=', pref, 'verified2x=', verified, 'alerts=0'); return
-    state['initialized'] = True; v.save(v.STATE_FILE, state); v.stats(checked, pref, verified, sent, max_score, best, max_discount)
+    state['initialized'] = True
+    v.save(v.STATE_FILE, state)
+    v.stats(checked, pref, verified, sent, max_score, best, max_discount)
+    print('PRODUKCJA: checked=', checked, 'prefilter=', pref, 'verified2x=', verified, 'alerts=', sent)
 
 
 if __name__ == '__main__':
