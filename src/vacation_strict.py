@@ -10,7 +10,8 @@ from playwright.sync_api import sync_playwright
 # Harmonogram / workflow_dispatch = normalna praca produkcyjna.
 SAFE_TEST_MODE = os.environ.get('VACATION_DRY_RUN', '').strip().lower() in {'1', 'true', 'yes'}
 
-DATE_RE = re.compile(r'(\d{1,2})\.(\d{1,2})\.(\d{4})\s*[-–]\s*(\d{1,2})\.(\d{1,2})\.(\d{4})')
+# ITAKA: 28.08 - 4.09.2026; TUI: 31.08.2026 - 07.09.2026
+DATE_RE = re.compile(r'(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\s*[-–]\s*(\d{1,2})\.(\d{1,2})\.(\d{4})')
 ITAKA_TOTAL_RE = re.compile(r'Łącznie:\s*([\d\s]+)\s*zł', re.I)
 TUI_CFG_RE = re.compile(r'Lotnisko\s+([^\d]+?)\s+Godzina\s+\d{1,2}:\d{2}\s+Pobyt\s+(\d{1,2})\s+Data wylotu\s+(\d{1,2}\.\d{1,2}\.\d{4})\s+Uczestnicy\s+2\s+dorosłych', re.I)
 TUI_TOTAL_RE = re.compile(r'([\d\s]{4,})\s*ZŁ\s+Twój wybór', re.I)
@@ -18,12 +19,23 @@ TUI_TOTAL_RE = re.compile(r'([\d\s]{4,})\s*ZŁ\s+Twój wybór', re.I)
 
 def flexible_dates(text, today):
     m = DATE_RE.search(text)
-    if m:
-        try:
-            return date(int(m.group(3)), int(m.group(2)), int(m.group(1))), date(int(m.group(6)), int(m.group(5)), int(m.group(4)))
-        except Exception:
-            pass
-    return None, None
+    if not m:
+        return None, None
+    try:
+        end_year = int(m.group(6))
+        start_month = int(m.group(2))
+        end_month = int(m.group(5))
+        if m.group(3):
+            start_year = int(m.group(3))
+        else:
+            start_year = end_year - 1 if start_month > end_month else end_year
+        start = date(start_year, start_month, int(m.group(1)))
+        end = date(end_year, end_month, int(m.group(4)))
+        if end < start:
+            return None, None
+        return start, end
+    except Exception:
+        return None, None
 
 
 def current_price_matches(source, text):
@@ -93,7 +105,6 @@ def exact_variant(visible, c):
 
 
 def standard(full):
-    # Najpierw dane strukturalne / oficjalna kategoria, dopiero potem fallback tekstowy.
     patterns = (
         r'"stars"\s*:\s*([3-5])\b',
         r'Kategoria\s+lokalna\s*([3-5])\s*gwiazd',
@@ -118,7 +129,6 @@ def official_beach(source, visible, full):
             if ok or dist is not None:
                 return ok, dist
     else:
-        # ITAKA zwykle podaje dystans w oficjalnej sekcji „Plaża”.
         for marker in ('plaża', 'plaza'):
             pos = low.find(marker)
             if pos >= 0:
@@ -159,7 +169,6 @@ def verify(page, c):
     if st is None or st < 3:
         return None, 'standard min. 3★ niepotwierdzony'
 
-    # Drugi niezależny odczyt tej samej strony chroni przed chwilową / błędną ceną.
     page.reload(wait_until='domcontentloaded', timeout=60000)
     page.wait_for_timeout(2200)
     visible2, full2 = v.page_text(page)
@@ -247,6 +256,9 @@ def run():
                 continue
             v.telegram(v.fmt(c)); state['alerts'][key] = {'date': today.isoformat(), 'price': d['price'], 'discount': discount, 'score': sc}; sent += 1
         ctx.close(); browser.close()
+
+    if checked == 0:
+        raise RuntimeError('Radar wakacji nie odczytał żadnej karty z żadnego źródła')
 
     if SAFE_TEST_MODE:
         print('SAFE TEST: checked=', checked, 'prefilter=', pref, 'verified2x=', verified, 'alerts=0'); return
