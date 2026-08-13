@@ -3,7 +3,7 @@ name: Radar okazji OLX
 on:
   workflow_dispatch:
   schedule:
-    - cron: "3,18,33,48 * * * *"
+    - cron: "6,21,36,51 * * * *"
 
 permissions:
   contents: write
@@ -12,6 +12,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: radar-olx
+      cancel-in-progress: false
 
     steps:
       - name: Pobierz repo
@@ -41,11 +44,10 @@ jobs:
 
       - name: Zapisz stan radaru i statystyki
         run: |
-          if git diff --quiet -- olx_deals_seen.json olx_daily_stats.json; then
-            exit 0
-          fi
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
           git add olx_deals_seen.json olx_daily_stats.json
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "Aktualizacja okazji OLX"
+          git pull --rebase origin main
           git push
