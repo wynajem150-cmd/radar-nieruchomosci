@@ -6,8 +6,8 @@ TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 messages = [
-    "🧪 TEST — 👀 WARTO SPRAWDZIĆ — 69/100\n🛒 OLX OKAZJA\n📍 Gliwice, śląskie\n🎮 Nintendo Switch OLED\n💰 Cena: 620 zł\n📊 Mediana podobnych ofert: 900 zł\n📉 Około 31% poniżej mediany\n💵 Potencjalna różnica: ok. 280 zł\n✅ cena mocno poniżej rynku\n✅ popularny model, łatwy do odsprzedaży\n⚠️ sprawdź stan, blokady i komplet zestawu\n\nTo tylko wiadomość testowa.",
-    "🧪 TEST — 🔥 MOCNA OKAZJA — 86/100\n🛒 OLX OKAZJA\n📍 Opole, opolskie\n🔧 Makita 18V LXT\n💰 Cena: 180 zł\n📊 Mediana podobnych ofert: 330 zł\n📉 Około 45% poniżej mediany\n💵 Potencjalna różnica: ok. 150 zł\n✅ bardzo niska cena względem podobnych ofert\n✅ markowy sprzęt, dobry popyt\n⚠️ sprawdź czy to pełne narzędzie, nie sama bateria/ładowarka\n\nTo tylko wiadomość testowa.",
+    "🧪 TEST — 🔥 OKAZJA WAKACYJNA — 82/100\n🏨 Hotel przykładowy 4★\n✈️ Katowice | 7 dni\n🍽 All Inclusive\n⭐ Ocena 8.2/10\n🏖 Plaża 150 m\n🧳 Bagaż rejestrowany\n💰 2299 zł/os. | 4598 zł za 2 osoby\n📉 Przecena 28%\n\nTo tylko wiadomość testowa.",
+    "🧪 TEST — 🔥🔥 SUPER OKAZJA — 96/100\n🏨 Hotel przykładowy 4★\n✈️ Kraków | 7 dni\n🍽 All Inclusive\n⭐ Ocena 8.6/10\n🏖 Hotel przy plaży\n🧳 Bagaż rejestrowany\n💰 1899 zł/os. | 3798 zł za 2 osoby\n📉 Przecena 44%\n\nTo tylko wiadomość testowa.",
 ]
 
 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -17,4 +17,4 @@ for message in messages:
     with urllib.request.urlopen(req, timeout=20) as response:
         if response.status != 200:
             raise RuntimeError(f"Telegram HTTP {response.status}")
-print("Wysłano 2 testowe okazje OLX.")
+print("Wysłano 2 testowe okazje wakacyjne.")
