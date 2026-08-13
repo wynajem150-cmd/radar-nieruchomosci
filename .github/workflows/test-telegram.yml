@@ -5,58 +5,17 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/test-telegram.yml'
+      - 'src/test_telegram.py'
 
 jobs:
   send-tests:
-    if: github.event.head_commit.message == 'Wyślij 3 testowe alerty Telegram'
     runs-on: ubuntu-latest
     steps:
-      - name: Wyślij 3 testowe oferty
+      - name: Pobierz repo
+        uses: actions/checkout@v4
+
+      - name: Wyślij testy
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          send_msg() {
-            curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-              --data-urlencode "parse_mode=HTML" \
-              --data-urlencode "disable_web_page_preview=true" \
-              --data-urlencode "text=$1"
-          }
-
-          send_msg "🧪 <b>TEST — 👀 WARTO SPRAWDZIĆ — 63/100</b>
-📍 Gliwice
-🌐 TEST
-💰 <b>239 000 zł</b>
-📐 52,0 m² | 4 596 zł/m²
-🚪 2 pokoje
-✅ dobry metraż 35–60 m²
-✅ 2 pokoje
-✅ cena poniżej lokalnej mediany
-
-To tylko wiadomość testowa."
-
-          send_msg "🧪 <b>TEST — 🔥 MOCNA OKAZJA — 78/100</b>
-📍 Zabrze
-🌐 TEST
-💰 <b>199 000 zł</b>
-📐 47,5 m² | 4 189 zł/m²
-🚪 2 pokoje
-✅ 18% poniżej mediany ceny/m²
-✅ dobry metraż 35–60 m²
-✅ balkon
-
-To tylko wiadomość testowa."
-
-          send_msg "🧪 <b>TEST — 🔥 MOCNA OKAZJA — 91/100</b>
-📍 Kędzierzyn-Koźle
-🌐 TEST
-💰 <b>215 000 zł</b>
-📐 50,0 m² | 4 300 zł/m²
-🚪 3 pokoje
-✅ 26% poniżej mediany ceny/m²
-✅ dobry metraż 35–60 m²
-✅ do remontu
-✅ bezpośrednio
-
-To tylko wiadomość testowa."
+        run: python src/test_telegram.py
