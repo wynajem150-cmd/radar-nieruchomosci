@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'src/vacation_strict.py'
       - 'src/vacation_deals.py'
       - '.github/workflows/vacation-deals.yml'
   schedule:
@@ -36,7 +37,8 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
-        run: python src/vacation_deals.py
+          VACATION_DRY_RUN: ${{ github.event_name == 'push' }}
+        run: python src/vacation_strict.py
 
       - name: Raport dzienny
         if: github.event_name != 'push'
@@ -55,4 +57,5 @@ jobs:
           git config user.email "radar-bot@users.noreply.github.com"
           git add vacation_state.json vacation_daily_stats.json
           git commit -m "Aktualizacja radaru wakacji"
+          git pull --rebase origin main
           git push
