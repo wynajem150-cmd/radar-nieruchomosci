@@ -100,9 +100,9 @@ def save_state(state):
 
 def telegram_send(message: str):
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    chat_id = os.environ.get("OLX_TELEGRAM_CHAT_ID", "").strip()
     if not token or not chat_id:
-        raise RuntimeError("Brak TELEGRAM_BOT_TOKEN lub TELEGRAM_CHAT_ID")
+        raise RuntimeError("Brak TELEGRAM_BOT_TOKEN lub OLX_TELEGRAM_CHAT_ID")
     r = requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
         json={
