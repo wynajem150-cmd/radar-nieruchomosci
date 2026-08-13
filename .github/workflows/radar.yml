@@ -1,9 +1,9 @@
-name: Wszystkie radary
+name: Radar nieruchomości
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "2,17,32,47 * * * *"
 
 permissions:
   contents: write
@@ -11,19 +11,26 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 12
+    concurrency:
+      group: radar-nieruchomosci
+      cancel-in-progress: false
+
     steps:
       - name: Pobierz repo
         uses: actions/checkout@v4
+
       - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Instalacja bibliotek
         run: |
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
-      - name: Nieruchomości
+
+      - name: Uruchom radar nieruchomości
         env:
           SEARCH_CONFIG_JSON: ${{ secrets.SEARCH_CONFIG_JSON }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -32,41 +39,13 @@ jobs:
           export SEARCH_CONFIG_JSON="$(python -c 'import json,os; c=json.loads(os.environ["SEARCH_CONFIG_JSON"]); c["threshold"]=60; print(json.dumps(c))')"
           python src/main.py
           python src/daily_report.py
-      - name: OLX
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          OLX_TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
-        run: |
-          python src/olx_deals.py
-          python src/olx_daily_report.py
-      - name: Polska
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
-        run: python src/poland_deals.py
-      - name: Wakacje
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
-          VACATION_DRY_RUN: "0"
-        run: |
-          python src/vacation_strict.py
-          python src/vacation_daily_report.py
-      - name: Monitor techniczny
-        env:
-          SEARCH_CONFIG_JSON: ${{ secrets.SEARCH_CONFIG_JSON }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          OLX_TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
-          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
-          HEALTH_DRY_RUN: "0"
-        run: python src/health_check.py
-      - name: Zapisz stany
+
+      - name: Zapisz stan
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add seen.json daily_stats.json olx_deals_seen.json olx_daily_stats.json poland_deals_seen.json vacation_state.json vacation_daily_stats.json health_state.json
+          git add seen.json daily_stats.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Aktualizacja wszystkich radarów"
+          git commit -m "Aktualizacja radaru nieruchomości"
           git pull --rebase origin main
           git push
