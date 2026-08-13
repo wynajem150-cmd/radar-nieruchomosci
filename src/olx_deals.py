@@ -5,13 +5,17 @@ import os
 import re
 import statistics
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, urlunsplit
+from zoneinfo import ZoneInfo
 
 import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 STATE_FILE = Path("olx_deals_seen.json")
+STATS_FILE = Path("olx_daily_stats.json")
+WARSAW = ZoneInfo("Europe/Warsaw")
 MAX_PRICE = 3000
 MIN_PRICE = 80
 THRESHOLD = 65
@@ -96,6 +100,29 @@ def load_state():
 def save_state(state):
     state["seen"] = state.get("seen", [])[-15000:]
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_stats():
+    today = datetime.now(WARSAW).date().isoformat()
+    try:
+        data = json.loads(STATS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        data = {}
+    if data.get("date") != today:
+        data = {
+            "date": today,
+            "runs": 0,
+            "checked": 0,
+            "new_offers": 0,
+            "alerts": 0,
+            "max_score": 0,
+            "reported": False,
+        }
+    return data
+
+
+def save_stats(data):
+    STATS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def telegram_send(message: str):
@@ -233,10 +260,13 @@ def fmt_alert(item, search_name, region, score, median_price, ratio, bonuses):
 
 def run():
     state = load_state()
+    stats = load_stats()
     seen = set(state.get("seen", []))
     initialized = bool(state.get("initialized", False))
     newly_seen = []
     alerts = []
+    checked = 0
+    max_score = 0
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -257,6 +287,7 @@ def run():
                     print(f"Błąd: {e}", file=sys.stderr)
                     continue
 
+                checked += len(offers)
                 if len(offers) < 4:
                     print(f"Za mało poprawnych ofert do porównania: {len(offers)}")
                     for item in offers:
@@ -278,18 +309,28 @@ def run():
                     newly_seen.append(h)
 
                     score, ratio, bonuses = score_offer(item, median_price)
+                    max_score = max(max_score, score)
                     if initialized and score >= THRESHOLD:
                         alerts.append((score, fmt_alert(item, search["name"], region, score, median_price, ratio, bonuses)))
 
         browser.close()
 
     alerts.sort(key=lambda x: x[0], reverse=True)
-    for _, message in alerts[:15]:
+    sent_alerts = alerts[:15]
+    for _, message in sent_alerts:
         telegram_send(message)
 
     state["seen"] = list(seen)
     state["initialized"] = True
     save_state(state)
+
+    stats["runs"] += 1
+    stats["checked"] += checked
+    stats["new_offers"] += len(newly_seen)
+    stats["alerts"] += len(sent_alerts)
+    stats["max_score"] = max(stats.get("max_score", 0), max_score)
+    save_stats(stats)
+
     print(f"\nNowych ofert: {len(newly_seen)} | alertów: {len(alerts)} | initialized wcześniej: {initialized}")
 
 
