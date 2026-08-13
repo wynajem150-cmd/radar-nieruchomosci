@@ -2,10 +2,6 @@ name: Radar okazji OLX
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/olx-deals.yml'
   schedule:
     - cron: "3,18,33,48 * * * *"
 
