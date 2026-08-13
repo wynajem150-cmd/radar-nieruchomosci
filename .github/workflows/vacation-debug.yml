@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/vacation-debug.yml'
-      - 'src/vacation_debug.py'
+      - 'src/vacation_verify_debug.py'
   workflow_dispatch:
 
 jobs:
@@ -20,4 +20,4 @@ jobs:
       - run: |
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
-      - run: python src/vacation_debug.py
+      - run: python src/vacation_verify_debug.py
