@@ -1,0 +1,19 @@
+name: Wyślij Egipt i Turcja
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/send-egypt-turkey.yml'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wyślij oferty
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
+        run: python src/send_egypt_turkey.py
