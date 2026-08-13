@@ -1,11 +1,7 @@
 name: Test alertów Telegram
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/test-telegram.yml'
-      - 'src/test_telegram.py'
+  workflow_dispatch:
 
 jobs:
   send-tests:
@@ -14,8 +10,8 @@ jobs:
       - name: Pobierz repo
         uses: actions/checkout@v4
 
-      - name: Wyślij testy do OKAZJE OLX
+      - name: Wyślij test
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
         run: python src/test_telegram.py
