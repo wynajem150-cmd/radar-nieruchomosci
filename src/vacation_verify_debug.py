@@ -6,19 +6,11 @@ from playwright.sync_api import sync_playwright
 
 
 def run():
-    # Tylko test techniczny: wyższy limit pozwala zweryfikować istniejące oferty.
-    # Nie wysyła Telegrama i nie zapisuje stanu.
-    v.MAX_PRICE_PP = 6000
     today = datetime.now(v.WARSAW).date()
     candidates = []
-
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
-        ctx = browser.new_context(
-            viewport={'width': 1440, 'height': 1400},
-            locale='pl-PL',
-            user_agent='Mozilla/5.0 Chrome/131 Safari/537.36',
-        )
+        ctx = browser.new_context(viewport={'width': 1440, 'height': 1400}, locale='pl-PL', user_agent='Mozilla/5.0 Chrome/131 Safari/537.36')
         search = ctx.new_page()
         detail = ctx.new_page()
 
@@ -31,38 +23,38 @@ def run():
             for row in v.cards(search, source, airport):
                 text = v.norm(row.get('text'))
                 start, end = s.flexible_dates(text, today)
-                if not start or not end or not (today <= start <= today + timedelta(days=30)):
-                    continue
-                days = v.duration(text, start, end)
+                days = v.duration(text, start, end) if start and end else None
                 meal = v.board(text)
                 price = s.unique_current_price(source, text)
                 rating, scale = v.rating(text + ' ' + v.norm(row.get('meta')))
+                if not start or not end or not (today <= start <= today + timedelta(days=30)):
+                    continue
                 if not days or not (5 <= days <= 10) or not meal or price is None or rating is None:
                     continue
-                candidates.append({
-                    'source': source,
-                    'airport': airport,
-                    'url': v.clean_url(row.get('url') or ''),
-                    'title': v.norm(row.get('title')) or text[:80],
-                    'text': text,
-                    'meta': v.norm(row.get('meta')),
-                    'start': start,
-                    'end': end,
-                    'days': days,
-                    'board': meal,
-                    'card_price': price,
-                })
+                candidates.append({'source': source, 'airport': airport, 'url': v.clean_url(row.get('url') or ''), 'title': v.norm(row.get('title')) or text[:80], 'text': text, 'meta': v.norm(row.get('meta')), 'start': start, 'end': end, 'days': days, 'board': meal, 'card_price': price})
 
-        candidates.sort(key=lambda x: x['card_price'])
-        print('KANDYDATÓW TESTOWYCH:', len(candidates))
-        for c in candidates[:6]:
-            print('\nTEST:', c['source'], c['airport'], c['title'][:60])
-            print('KARTA:', c['card_price'], 'zł/os.', c['start'], c['end'], c['board'])
-            data, error = s.strict_verify(detail, c)
-            if data:
-                print('POTWIERDZONE 2X:', data['price'], 'zł/os.; stars=', data['stars'], 'beach=', data['beach_m'], 'baggage=OK')
-            else:
-                print('ODRZUT:', error)
+        # Jeden przykład ITAKA i jeden TUI wystarczą do poznania układu strony szczegółów.
+        chosen = []
+        for source in ('ITAKA', 'TUI'):
+            item = next((x for x in sorted(candidates, key=lambda y: y['card_price']) if x['source'] == source), None)
+            if item:
+                chosen.append(item)
+
+        for c in chosen:
+            print('\n================ DETAIL', c['source'], '================')
+            print('HOTEL:', c['title'])
+            print('KARTA:', c['airport'], c['start'], c['end'], c['board'], c['card_price'], 'zł/os.')
+            print('URL:', c['url'])
+            detail.goto(c['url'], wait_until='domcontentloaded', timeout=60000)
+            detail.wait_for_timeout(3500)
+            visible, full = v.page_text(detail)
+            print('VISIBLE_START:', visible[:5000])
+            for needle in [c['airport'], f"{c['start'].day:02d}.{c['start'].month:02d}", str(c['card_price']), 'bagaż rejestrowany', 'Bagaż rejestrowany', 'All Inclusive']:
+                pos = visible.lower().find(needle.lower())
+                print('NEEDLE', repr(needle), 'POS', pos)
+                if pos >= 0:
+                    print('CTX:', visible[max(0, pos-500):pos+1000])
+            print('FULL_HAS_BAGGAGE:', 'bagaż rejestrowany' in full.lower())
 
         ctx.close()
         browser.close()
