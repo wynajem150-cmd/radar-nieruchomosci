@@ -1,7 +1,7 @@
 {
   "date": "2026-08-14",
-  "runs": 5,
-  "checked": 420,
+  "runs": 6,
+  "checked": 504,
   "prefiltered": 0,
   "verified": 0,
   "matched": 0,
@@ -9,5 +9,5 @@
   "max_score": 0,
   "best_price": null,
   "max_discount": 0,
-  "reported": false
+  "reported": true
 }
