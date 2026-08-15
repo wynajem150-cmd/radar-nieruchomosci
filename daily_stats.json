@@ -1,9 +1,9 @@
 {
   "date": "2026-08-15",
-  "runs": 5,
-  "checked": 502,
-  "new_offers": 0,
+  "runs": 6,
+  "checked": 603,
+  "new_offers": 2,
   "alerts": 0,
-  "max_score": 0,
+  "max_score": 27,
   "reported": false
 }
