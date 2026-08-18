@@ -1,9 +1,9 @@
 {
   "date": "2026-08-18",
-  "runs": 11,
-  "checked": 1680,
+  "runs": 12,
+  "checked": 1830,
   "new_offers": 17,
   "alerts": 6,
   "max_score": 95,
-  "reported": false
+  "reported": true
 }
