@@ -29,8 +29,8 @@
       "discount": 32
     },
     "913e2f402fffb7ca78ae8aa9": {
-      "price": 259,
-      "discount": 40
+      "price": 246,
+      "discount": 43
     },
     "686a23550a65febd43d7c256": {
       "price": 224,
@@ -79,6 +79,14 @@
     "02802faeb749e67a67131cbc": {
       "price": 189,
       "discount": 50
+    },
+    "acfe9f8809fc0f8bcd1ddd2b": {
+      "price": 202,
+      "discount": 35
+    },
+    "811c3a1a40b90ff4e383c8c0": {
+      "price": 299,
+      "discount": 32
     }
   },
   "initialized": true
