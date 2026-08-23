@@ -3,74 +3,74 @@
     "housing:gratka": {
       "zero_streak": 0,
       "last_count": 35,
-      "last_check": "2026-08-23T23:42:28+02:00",
-      "last_ok": "2026-08-23T23:42:28+02:00"
+      "last_check": "2026-08-24T00:48:18+02:00",
+      "last_ok": "2026-08-24T00:48:18+02:00"
     },
     "housing:morizon": {
       "zero_streak": 0,
       "last_count": 35,
-      "last_check": "2026-08-23T23:42:28+02:00",
-      "last_ok": "2026-08-23T23:42:28+02:00"
+      "last_check": "2026-08-24T00:48:18+02:00",
+      "last_ok": "2026-08-24T00:48:18+02:00"
     },
     "housing:olx": {
       "zero_streak": 0,
       "last_count": 17,
-      "last_check": "2026-08-23T23:42:28+02:00",
-      "last_ok": "2026-08-23T23:42:28+02:00"
+      "last_check": "2026-08-24T00:48:18+02:00",
+      "last_ok": "2026-08-24T00:48:18+02:00"
     },
     "housing:otodom": {
       "zero_streak": 0,
       "last_count": 23,
-      "last_check": "2026-08-23T23:42:28+02:00",
-      "last_ok": "2026-08-23T23:42:28+02:00"
+      "last_check": "2026-08-24T00:48:18+02:00",
+      "last_ok": "2026-08-24T00:48:18+02:00"
     },
     "deals:olx": {
       "zero_streak": 0,
       "last_count": 330,
-      "last_check": "2026-08-23T23:42:43+02:00",
-      "last_ok": "2026-08-23T23:42:43+02:00"
+      "last_check": "2026-08-24T00:48:34+02:00",
+      "last_ok": "2026-08-24T00:48:34+02:00"
     },
     "poland:travelist": {
       "zero_streak": 0,
       "last_count": 20,
-      "last_check": "2026-08-23T23:42:50+02:00",
-      "last_ok": "2026-08-23T23:42:50+02:00"
+      "last_check": "2026-08-24T00:48:40+02:00",
+      "last_ok": "2026-08-24T00:48:40+02:00"
     },
     "vacation:ITAKA:Katowice": {
       "zero_streak": 0,
       "last_count": 5,
-      "last_check": "2026-08-23T23:42:55+02:00",
-      "last_ok": "2026-08-23T23:42:55+02:00"
+      "last_check": "2026-08-24T00:48:46+02:00",
+      "last_ok": "2026-08-24T00:48:46+02:00"
     },
     "vacation:ITAKA:Kraków": {
       "zero_streak": 0,
       "last_count": 5,
-      "last_check": "2026-08-23T23:42:58+02:00",
-      "last_ok": "2026-08-23T23:42:58+02:00"
+      "last_check": "2026-08-24T00:48:49+02:00",
+      "last_ok": "2026-08-24T00:48:49+02:00"
     },
     "vacation:ITAKA:Wrocław": {
       "zero_streak": 0,
       "last_count": 5,
-      "last_check": "2026-08-23T23:43:02+02:00",
-      "last_ok": "2026-08-23T23:43:02+02:00"
+      "last_check": "2026-08-24T00:48:53+02:00",
+      "last_ok": "2026-08-24T00:48:53+02:00"
     },
     "vacation:TUI:Katowice": {
       "zero_streak": 0,
       "last_count": 23,
-      "last_check": "2026-08-23T23:43:04+02:00",
-      "last_ok": "2026-08-23T23:43:04+02:00"
+      "last_check": "2026-08-24T00:48:56+02:00",
+      "last_ok": "2026-08-24T00:48:56+02:00"
     },
     "vacation:TUI:Kraków": {
       "zero_streak": 0,
       "last_count": 23,
-      "last_check": "2026-08-23T23:43:07+02:00",
-      "last_ok": "2026-08-23T23:43:07+02:00"
+      "last_check": "2026-08-24T00:48:58+02:00",
+      "last_ok": "2026-08-24T00:48:58+02:00"
     },
     "vacation:TUI:Wrocław": {
       "zero_streak": 0,
       "last_count": 23,
-      "last_check": "2026-08-23T23:43:09+02:00",
-      "last_ok": "2026-08-23T23:43:09+02:00"
+      "last_check": "2026-08-24T00:49:01+02:00",
+      "last_ok": "2026-08-24T00:49:01+02:00"
     }
   }
 }
