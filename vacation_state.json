@@ -1,5 +1,12 @@
 {
   "initialized": true,
-  "prices": {},
+  "prices": {
+    "8dc615defe0bb1a70c09890fc379": [
+      {
+        "date": "2026-08-24",
+        "price": 2429
+      }
+    ]
+  },
   "alerts": {}
 }
