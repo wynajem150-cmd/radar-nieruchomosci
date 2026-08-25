@@ -1,13 +1,13 @@
 {
   "date": "2026-08-25",
-  "runs": 4,
-  "checked": 336,
-  "prefiltered": 4,
-  "verified": 4,
-  "matched": 4,
+  "runs": 5,
+  "checked": 420,
+  "prefiltered": 5,
+  "verified": 5,
+  "matched": 5,
   "alerts": 0,
   "max_score": 0,
-  "best_price": 2429,
-  "max_discount": 11,
+  "best_price": 2129,
+  "max_discount": 13,
   "reported": false
 }
