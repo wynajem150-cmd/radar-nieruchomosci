@@ -95,6 +95,22 @@
     "cbd07a79bee160779d09afcb": {
       "price": 287,
       "discount": 64
+    },
+    "b45662694a687d71650e0c99": {
+      "price": 299,
+      "discount": 30
+    },
+    "a004d77998ded8185eb54274": {
+      "price": 299,
+      "discount": 37
+    },
+    "896064196e82ed5db2a3c4c4": {
+      "price": 285,
+      "discount": 36
+    },
+    "610ae71111b56691be103d0e": {
+      "price": 260,
+      "discount": 32
     }
   },
   "initialized": true
