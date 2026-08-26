@@ -3,7 +3,7 @@ name: Radar nieruchomości
 on:
   workflow_dispatch:
   schedule:
-    - cron: "2,17,32,47 * * * *"
+    - cron: "2 */3 * * *"
 
 permissions:
   contents: write
