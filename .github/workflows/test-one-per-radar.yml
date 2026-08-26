@@ -1,0 +1,35 @@
+name: Test po jednej okazji z każdego radaru
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/test-one-per-radar.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Pobierz repo
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalacja bibliotek
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Wyślij po jednej wiadomości z każdego radaru
+        env:
+          SEARCH_CONFIG_JSON: ${{ secrets.SEARCH_CONFIG_JSON }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OLX_TELEGRAM_CHAT_ID: ${{ secrets.OLX_TELEGRAM_CHAT_ID }}
+          VACATION_TELEGRAM_CHAT_ID: ${{ secrets.VACATION_TELEGRAM_CHAT_ID }}
+        run: python src/test_one_per_radar.py
