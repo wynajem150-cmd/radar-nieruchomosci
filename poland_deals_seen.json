@@ -45,8 +45,8 @@
       "discount": 49
     },
     "412aa57529de355607277cf2": {
-      "price": 213,
-      "discount": 50
+      "price": 237,
+      "discount": 44
     },
     "e1c1e5ff164ea32594d3e0c7": {
       "price": 209,
@@ -54,7 +54,7 @@
     },
     "d7dc514aaa6044a66969768d": {
       "price": 249,
-      "discount": 40
+      "discount": 49
     },
     "7e2117ebdd69564cb4d180ef": {
       "price": 229,
@@ -111,6 +111,14 @@
     "610ae71111b56691be103d0e": {
       "price": 260,
       "discount": 32
+    },
+    "841803ae68a8db126e2cecab": {
+      "price": 279,
+      "discount": 41
+    },
+    "6a2e7df385e2edbb937d4eaa": {
+      "price": 239,
+      "discount": 42
     }
   },
   "initialized": true
