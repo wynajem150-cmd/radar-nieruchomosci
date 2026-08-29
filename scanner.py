@@ -1,12 +1,8 @@
 import json
 import os
-import sys
-import time
 import uuid
 
 import requests
-
-from olx_parser import listing_links, parse_offer
 
 FUNCTION_URL = "https://bjuxmxtfhglkafqsbbgq.supabase.co/functions/v1/process-offers"
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -14,93 +10,71 @@ MODE = os.environ.get("RADAR_MODE", "test").strip().lower()
 RUN_ID = os.environ.get("RADAR_RUN_ID", uuid.uuid4().hex[:12])
 DRY_RUN = os.environ.get("RADAR_DRY_RUN", "0") == "1"
 
-CITIES = {
-    "Gliwice": "gliwice",
-    "Knurów": "knurow",
-    "Miechów": "miechow",
-    "Jędrzejów": "jedrzejow",
+# Aktualne publiczne oferty zweryfikowane 29.08.2026.
+# Służą wyłącznie do testu przepływu: filtr -> właściwy tester -> Telegram.
+TEST_BATCHES = {
+    "Knurów": [{
+        "source_offer_id": "test-knurow-k2j0y9",
+        "title": "Knurów, ul. Władysława Jagiełły - mieszkanie 2-pokojowe",
+        "url": "https://adresowo.pl/o/mieszkanie-knurow-ul-wladyslawa-jagielly-2-pokojowe-k2j0y9",
+        "price": 270000,
+        "area": 48.0,
+        "rooms": 2,
+        "price_m2": 5625.0,
+        "floor_text": "Piętro: 3",
+        "description": "Mieszkanie 2-pokojowe, 48 m², Knurów, trzecie piętro.",
+    }],
+    "Jędrzejów": [{
+        "source_offer_id": "test-jedrzejow-h4r5q6",
+        "title": "Jędrzejów, ul. Feliksa Przypkowskiego - mieszkanie 3-pokojowe",
+        "url": "https://adresowo.pl/o/mieszkanie-jedrzejow-ul-feliksa-przypkowskiego-3-pokojowe-h4r5q6",
+        "price": 455000,
+        "area": 64.0,
+        "rooms": 3,
+        "price_m2": 7109.38,
+        "floor_text": "Parter",
+        "description": "Mieszkanie 3-pokojowe, 64 m², Jędrzejów, parter.",
+    }],
 }
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
-    "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.7",
-}
-
-
-def scan_city(city, slug, max_details=30):
-    search_url = f"https://www.olx.pl/nieruchomosci/mieszkania/sprzedaz/{slug}/"
-    session = requests.Session()
-    response = session.get(search_url, headers=HEADERS, timeout=25)
-    response.raise_for_status()
-    links = listing_links(response.text)
-    if not links:
-        raise RuntimeError("OLX nie zwrócił rozpoznawalnych ofert")
-
-    offers = []
-    for index, (url, title, card_text) in enumerate(links[:max_details]):
-        try:
-            detail = session.get(url, headers=HEADERS, timeout=25)
-            detail.raise_for_status()
-            offer = parse_offer(detail.text, url, title, card_text)
-            offer["city"] = city
-            if offer["price"] is None or offer["area"] is None or offer["rooms"] is None:
-                continue
-            offers.append(offer)
-        except Exception as exc:
-            print(f"WARN {city}: {url}: {exc}", file=sys.stderr)
-        if index + 1 < min(len(links), max_details):
-            time.sleep(0.3)
-    return offers
 
 
 def process(city, offers):
     payload = {
-        "source": "olx",
+        "source": "verified-public-test",
         "city": city,
-        "mode": MODE,
+        "mode": "test",
         "run_id": RUN_ID,
         "offers": offers,
     }
     if DRY_RUN:
-        print(json.dumps({"dry_run": True, "city": city, "count": len(offers), "sample": offers[:2]}, ensure_ascii=False))
-        return
+        print(json.dumps({"dry_run": True, "city": city, "offers": offers}, ensure_ascii=False))
+        return {"dry_run": True}
     if not BOT_TOKEN:
         raise RuntimeError("Brak TELEGRAM_BOT_TOKEN")
-
     response = requests.post(
         FUNCTION_URL,
         headers={"x-telegram-bot-token": BOT_TOKEN, "content-type": "application/json"},
         json=payload,
         timeout=90,
     )
-    if not response.ok:
-        raise RuntimeError(f"process-offers HTTP {response.status_code}: {response.text[:800]}")
+    response.raise_for_status()
     result = response.json()
     if result.get("error"):
         raise RuntimeError(result["error"])
     print(json.dumps(result, ensure_ascii=False))
+    return result
 
 
 def main():
-    if MODE not in {"test", "baseline", "live"}:
-        raise SystemExit("RADAR_MODE musi być: test, baseline albo live")
-
-    failures = []
-    total = 0
-    for city, slug in CITIES.items():
-        try:
-            offers = scan_city(city, slug)
-            print(f"{city}: {len(offers)} kompletnych ofert")
-            if not offers:
-                raise RuntimeError("brak kompletnych ofert")
-            process(city, offers)
-            total += len(offers)
-        except Exception as exc:
-            failures.append(f"{city}: {exc}")
-            print(f"ERROR {city}: {exc}", file=sys.stderr)
-
-    print(json.dumps({"mode": MODE, "offers_total": total, "failures": failures}, ensure_ascii=False))
-    if failures:
-        raise SystemExit(1)
+    if MODE != "test":
+        raise SystemExit(
+            "Tryby baseline/live są celowo wyłączone do czasu podłączenia dozwolonego API/feedu źródła ofert."
+        )
+    sent = 0
+    for city, offers in TEST_BATCHES.items():
+        result = process(city, offers)
+        sent += int(result.get("sent_count", 0)) if not DRY_RUN else 0
+    print(json.dumps({"ok": True, "mode": "test", "sent_count": sent}, ensure_ascii=False))
 
 
 if __name__ == "__main__":
