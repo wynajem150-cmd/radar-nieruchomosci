@@ -1,0 +1,52 @@
+name: Radar Okazji - test ofert
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Tryb uruchomienia
+        required: true
+        default: test
+        type: choice
+        options:
+          - test
+          - baseline
+      dry_run:
+        description: Tylko pobierz i pokaż wynik bez wysyłki
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: radar-okazji-offers
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run parser tests
+        run: python -m unittest -v test_parser.py
+
+      - name: Scan offers
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          RADAR_MODE: ${{ inputs.mode }}
+          RADAR_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+          RADAR_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: python scanner.py
