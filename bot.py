@@ -61,34 +61,50 @@ def fmt_profile(row):
     )
 
 
-def handle_start(update):
+def handle_update(update):
     msg = update.get("message") or {}
     text = (msg.get("text") or "").strip()
     if not text.startswith("/start"):
         return
+
     parts = text.split(maxsplit=1)
     chat = msg.get("chat") or {}
     chat_id = chat.get("id")
     username = (msg.get("from") or {}).get("username")
     if not chat_id:
         return
+
     if len(parts) != 2 or not UUID_RE.match(parts[1]):
-        tg("sendMessage", {"chat_id": chat_id, "text": "Ten link aktywacyjny jest nieprawidłowy. Skontaktuj się z administratorem Radaru Okazji."})
+        tg("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Ten link aktywacyjny jest nieprawidłowy. Skontaktuj się z administratorem Radaru Okazji.",
+        })
         return
+
     rows = supabase_rpc(update["update_id"], parts[1], chat_id, username)
     if rows:
         tg("sendMessage", {"chat_id": chat_id, "text": fmt_profile(rows[0])})
     else:
-        tg("sendMessage", {"chat_id": chat_id, "text": "Ten link został już użyty albo nie jest aktywny. Jeśli to Twój link, skontaktuj się z administratorem."})
+        tg("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Ten link został już użyty albo nie jest aktywny. Jeśli to Twój link, skontaktuj się z administratorem.",
+        })
+
+
+def acknowledge(update_id):
+    # Telegram confirms all updates with IDs lower than offset.
+    tg("getUpdates", {"offset": update_id + 1, "timeout": 0, "limit": 1}, timeout=10)
 
 
 def main():
     updates = tg("getUpdates", {"timeout": 20, "allowed_updates": ["message"]}, timeout=30) or []
     for update in updates:
         try:
-            handle_start(update)
+            handle_update(update)
+            acknowledge(update["update_id"])
         except Exception as exc:
             print(f"ERROR update {update.get('update_id')}: {exc}")
+            break
 
 
 if __name__ == "__main__":
