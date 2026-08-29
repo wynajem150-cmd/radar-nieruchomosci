@@ -3,8 +3,7 @@ import re
 import requests
 
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-SUPABASE_URL = "https://bjuxmxtfhglkafqsbbgq.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdXhteHRmaGdsa2FmcXNiYmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5ODg4MDEsImV4cCI6MjEwMzU2NDgwMX0.5Sq9_I8tMZrF2qgOlg4g_LRqhjYmJwZKv2nBvAORvs0"
+TELEGRAM_START_URL = "https://bjuxmxtfhglkafqsbbgq.supabase.co/functions/v1/telegram-start"
 
 TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
@@ -21,8 +20,7 @@ def tg(method, payload=None, timeout=30):
 
 def supabase_rpc(update_id, token, chat_id, username):
     headers = {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+        "x-telegram-bot-token": BOT_TOKEN,
         "Content-Type": "application/json",
     }
     payload = {
@@ -32,7 +30,7 @@ def supabase_rpc(update_id, token, chat_id, username):
         "p_username": username or None,
     }
     r = requests.post(
-        f"{SUPABASE_URL}/rest/v1/rpc/process_telegram_start",
+        TELEGRAM_START_URL,
         headers=headers,
         json=payload,
         timeout=30,
@@ -92,7 +90,6 @@ def handle_update(update):
 
 
 def acknowledge(update_id):
-    # Telegram confirms all updates with IDs lower than offset.
     tg("getUpdates", {"offset": update_id + 1, "timeout": 0, "limit": 1}, timeout=10)
 
 
