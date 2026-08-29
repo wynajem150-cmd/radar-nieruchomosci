@@ -16,6 +16,8 @@ on:
         required: true
         default: false
         type: boolean
+  schedule:
+    - cron: '0 * * * *'
 
 permissions:
   contents: read
@@ -46,7 +48,7 @@ jobs:
       - name: Scan offers
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          RADAR_MODE: ${{ inputs.mode }}
+          RADAR_MODE: ${{ inputs.mode || 'test' }}
           RADAR_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
           RADAR_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
         run: python scanner.py
