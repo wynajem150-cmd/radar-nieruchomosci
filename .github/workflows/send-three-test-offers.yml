@@ -1,0 +1,124 @@
+name: Send three test offers
+
+on:
+  push:
+    paths:
+      - ".github/workflows/send-three-test-offers.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    if: github.event.head_commit.message == 'Send three test offers'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test offers to linked testers
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          endpoint = "https://bjuxmxtfhglkafqsbbgq.supabase.co/functions/v1/process-offers"
+          offers = [
+              {
+                  "run_id": "test-flip-20260829-01",
+                  "city": "Kedzierzyn Kozle",
+                  "offer": {
+                      "source_offer_id": "26518531",
+                      "title": "Mieszkanie 46,94 m², 2 pokoje, Kędzierzyn-Koźle",
+                      "url": "https://kedzierzyn-kozle.nieruchomosci-online.pl/mieszkanie,m2,z-oddzielna-kuchnia/26518531.html",
+                      "voivodeship": "opolskie",
+                      "price": 100000,
+                      "area": 46.94,
+                      "rooms": 2,
+                      "price_m2": 2130.38,
+                      "floor_text": "Piętro: 1 / 4",
+                      "market_price_m2": 5458.07,
+                      "market_discount_pct": 60.97,
+                      "renovation_cost_low": 42246,
+                      "renovation_cost_high": 70410,
+                      "suggested_sale_price": 251078,
+                      "estimated_profit_low": 68114,
+                      "estimated_profit_high": 101299,
+                      "analysis_confidence": "niska",
+                      "analysis_note": "Benchmark na podstawie 4 podobnych ofert."
+                  }
+              },
+              {
+                  "run_id": "test-flip-20260829-02",
+                  "city": "Katowice",
+                  "offer": {
+                      "source_offer_id": "26732761",
+                      "title": "Mieszkanie 58 m², 2 pokoje, Katowice-Nikiszowiec",
+                      "url": "https://katowice.nieruchomosci-online.pl/mieszkanie,m2,przy-lesie/26732761.html",
+                      "voivodeship": "śląskie",
+                      "price": 347000,
+                      "area": 58,
+                      "rooms": 2,
+                      "price_m2": 5982.76,
+                      "floor_text": "Parter / 2",
+                      "market_price_m2": 10700,
+                      "market_discount_pct": 44.09,
+                      "renovation_cost_low": 52200,
+                      "renovation_cost_high": 87000,
+                      "suggested_sale_price": 608188,
+                      "estimated_profit_low": 143779,
+                      "estimated_profit_high": 190742,
+                      "analysis_confidence": "niska",
+                      "analysis_note": "Benchmark na podstawie 7 podobnych ofert."
+                  }
+              },
+              {
+                  "run_id": "test-flip-20260829-03",
+                  "city": "Katowice",
+                  "offer": {
+                      "source_offer_id": "26509166",
+                      "title": "Mieszkanie 44,97 m², 1 pokój, Katowice-Szopienice",
+                      "url": "https://katowice.nieruchomosci-online.pl/mieszkanie,kawalerka,z-aneksem-kuchennym/26509166.html",
+                      "voivodeship": "śląskie",
+                      "price": 320000,
+                      "area": 44.97,
+                      "rooms": 1,
+                      "price_m2": 7115.86,
+                      "floor_text": "Piętro: 1",
+                      "market_price_m2": 10700,
+                      "market_discount_pct": 33.50,
+                      "renovation_cost_low": 40473,
+                      "renovation_cost_high": 67455,
+                      "suggested_sale_price": 471555,
+                      "estimated_profit_low": 60523,
+                      "estimated_profit_high": 96936,
+                      "analysis_confidence": "niska",
+                      "analysis_note": "Benchmark na podstawie 7 podobnych ofert."
+                  }
+              }
+          ]
+
+          token = os.environ["TELEGRAM_BOT_TOKEN"]
+          for item in offers:
+              payload = {
+                  "source": "verified-public-test",
+                  "city": item["city"],
+                  "mode": "test",
+                  "run_id": item["run_id"],
+                  "offers": [item["offer"]],
+              }
+              request = urllib.request.Request(
+                  endpoint,
+                  data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                  headers={
+                      "Content-Type": "application/json",
+                      "x-telegram-bot-token": token,
+                  },
+                  method="POST",
+              )
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  result = json.loads(response.read().decode("utf-8"))
+                  print(json.dumps(result, ensure_ascii=False))
+                  if not result.get("ok") or result.get("sent_count") != 2 or result.get("errors"):
+                      raise RuntimeError(result)
+          PY
