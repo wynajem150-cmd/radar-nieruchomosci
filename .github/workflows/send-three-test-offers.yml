@@ -122,3 +122,5 @@ jobs:
                   if not result.get("ok") or result.get("sent_count") != 2 or result.get("errors"):
                       raise RuntimeError(result)
           PY
+
+# one-time trigger
