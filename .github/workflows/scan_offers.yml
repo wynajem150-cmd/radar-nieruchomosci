@@ -17,7 +17,7 @@ on:
         default: false
         type: boolean
   schedule:
-    # Alert po zakończeniu godzinnych skanów Supabase (minuty 5, 15, 20 i 25).
+    # Alert po zakończeniu godzinnych skanów i benchmarków Supabase (minuty 5–32).
     - cron: '40 * * * *'
     # Dwa terminy UTC obsługują zmianę czasu CET/CEST.
     # Edge Function wyśle podsumowanie tylko o 20:00 Europe/Warsaw.

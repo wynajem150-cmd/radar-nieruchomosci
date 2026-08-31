@@ -99,6 +99,7 @@ jobs:
           ]
 
           token = os.environ["TELEGRAM_BOT_TOKEN"]
+          anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdXhteHRmaGdsa2FmcXNiYmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5ODg4MDEsImV4cCI6MjEwMzU2NDgwMX0.5Sq9_I8tMZrF2qgOlg4g_LRqhjYmJwZKv2nBvAORvs0"
           for item in offers:
               payload = {
                   "source": "verified-public-test",
@@ -112,6 +113,8 @@ jobs:
                   data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                   headers={
                       "Content-Type": "application/json",
+                      "apikey": anon_key,
+                      "Authorization": f"Bearer {anon_key}",
                       "x-telegram-bot-token": token,
                   },
                   method="POST",
