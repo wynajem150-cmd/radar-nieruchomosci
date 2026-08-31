@@ -16,6 +16,7 @@ type Offer = {
   contact_phone: string | null;
   contact_email: string | null;
   seller_type: string;
+  image_urls: string[];
   last_seen_at: string;
 };
 
@@ -114,6 +115,20 @@ function phone(text: string) {
   return text.match(/(?:(?:\+|00)48[\s-]?)?(\d{3}[\s-]?\d{3}[\s-]?\d{3})/)?.[1]?.replace(/\D/g, "") || null;
 }
 
+function images(html: string, base: string) {
+  const result: string[] = [];
+  const candidates = [meta(html, "og:image"), ...[...html.matchAll(/<img\b[^>]+(?:src|data-src)=["']([^"']+)["']/gi)].map((match) => decode(match[1]))];
+  for (const candidate of candidates) {
+    try {
+      const url = new URL(candidate, base);
+      if (!/^https?:$/.test(url.protocol) || /logo|icon|avatar|spinner|placeholder/i.test(url.pathname)) continue;
+      if (!result.includes(url.toString())) result.push(url.toString());
+      if (result.length >= 12) break;
+    } catch {}
+  }
+  return result;
+}
+
 function standardOffer(source: string, url: string, html: string, region: string, fixedCity?: string, titleHint?: string): Offer | null {
   const text = plain(html);
   const title = (titleHint || meta(html, "og:title") || html.match(/<h1[^>]*>([\s\S]{1,500}?)<\/h1>/i)?.[1] || `Oferta ${source}`)
@@ -146,6 +161,7 @@ function standardOffer(source: string, url: string, html: string, region: string
     contact_phone: phone(text),
     contact_email: text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]?.toLowerCase() || null,
     seller_type: source.startsWith("bip-") || source === "zgm-gliwice" || source === "pkp-nieruchomosci" || source === "amw" ? "przetarg publiczny" : "unknown",
+    image_urls: images(html, url),
     last_seen_at: new Date().toISOString(),
   };
 }
@@ -204,6 +220,7 @@ async function scanSprzedajemy(region: string) {
         contact_phone: null,
         contact_email: null,
         seller_type: data.accountType === "personal" ? "private" : "agent",
+        image_urls: images(detail.html, detail.url),
         last_seen_at: new Date().toISOString(),
       } satisfies Offer;
     } catch {
@@ -274,6 +291,7 @@ async function scanZgmGliwice() {
       title, price, area, rooms: null, price_m2: price && area ? Math.round((price / area) * 100) / 100 : null,
       floor_text: null, description: `${title}. ${summary}. Przetarg na lokal mieszkalny ZGM Gliwice.`,
       contact_phone: null, contact_email: null, seller_type: "przetarg publiczny", last_seen_at: new Date().toISOString(),
+      image_urls: [],
     });
   }
   return { httpStatus: listing.status, found: offers.length, offers };

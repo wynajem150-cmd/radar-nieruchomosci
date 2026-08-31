@@ -53,7 +53,27 @@ async function benchmark(city: string, voivodeship: string) {
       : "";
     const date = normalizedDate ? new Date(normalizedDate) : null;
     const transactionType = tag(block, "tran_rodzaj_trans");
-    return { area, price, date, transactionType };
+    const localId = block.match(/gml:id=["']([^"']+)["']/i)?.[1]
+      || tag(block, "tran_lokalny_id_iip")
+      || `${city}-${dateText}-${area}-${price}`;
+    return {
+      transaction_id: `${teryt}:${localId}`,
+      city_key: city.toLowerCase(),
+      city,
+      voivodeship,
+      transaction_date: date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : null,
+      address: tag(block, "lok_adres") || null,
+      area,
+      price: price == null ? null : Math.round(price),
+      price_m2: area && price ? Math.round((price / area) * 100) / 100 : null,
+      market_type: tag(block, "tran_rodzaj_rynku") || null,
+      transaction_type: transactionType || null,
+      source_name: "GUGiK RCN WFS",
+      source_url: RCN_URL,
+      fetched_at: new Date().toISOString(),
+      date,
+      transactionType,
+    };
   }).filter((row) => row.area != null && row.area >= 25 && row.area <= 60
     && row.price != null && row.price >= 20000 && row.price <= 3000000
     && row.date != null && !Number.isNaN(row.date.getTime()) && row.date >= cutoff
@@ -65,6 +85,7 @@ async function benchmark(city: string, voivodeship: string) {
     sample_count: values.length,
     period_from: dates[0]?.toISOString().slice(0, 10) || null,
     period_to: dates.at(-1)?.toISOString().slice(0, 10) || null,
+    transactions: rows.map(({ date: _date, transactionType: _transactionType, ...row }) => row),
   };
 }
 
@@ -73,6 +94,8 @@ Deno.serve(async (req) => {
     if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
     const body = await req.json().catch(() => ({}));
     const limit = Math.max(1, Math.min(10, Number(body?.limit) || 6));
+    const offset = Math.max(0, Math.min(100, Number(body?.offset) || 0));
+    const force = body?.force === true;
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
     const serviceKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -93,6 +116,7 @@ Deno.serve(async (req) => {
     const fresh = new Map((existing || []).map((row: any) => [`${row.voivodeship}:${row.city_key}`, new Date(row.fetched_at).getTime()]));
     const locations: Array<{ city: string; voivodeship: string }> = [];
     const seen = new Set<string>();
+    let eligible = 0;
     for (const row of candidates || []) {
       const city = String(row.city || "").trim();
       const voivodeship = String(row.voivodeship || "");
@@ -100,7 +124,8 @@ Deno.serve(async (req) => {
       if (!city || seen.has(key)) continue;
       seen.add(key);
       const fetchedAt = fresh.get(key) || 0;
-      if (Date.now() - fetchedAt < 24 * 60 * 60 * 1000) continue;
+      if (!force && Date.now() - fetchedAt < 24 * 60 * 60 * 1000) continue;
+      if (eligible++ < offset) continue;
       locations.push({ city, voivodeship });
       if (locations.length >= limit) break;
     }
@@ -108,26 +133,31 @@ Deno.serve(async (req) => {
     const results = await Promise.all(locations.map(async (location) => {
       try {
         const stats = await benchmark(location.city, location.voivodeship);
+        if (stats.transactions.length) {
+          const { error: transactionsError } = await db.from("market_transactions")
+            .upsert(stats.transactions, { onConflict: "transaction_id" });
+          if (transactionsError) throw transactionsError;
+        }
+        const { transactions: _transactions, ...aggregateStats } = stats;
         const { error } = await db.from("market_transaction_stats").upsert({
           city_key: location.city.toLowerCase(),
           city: location.city,
           voivodeship: location.voivodeship,
-          ...stats,
+          ...aggregateStats,
           source_name: "GUGiK RCN WFS",
           source_url: RCN_URL,
           fetched_at: new Date().toISOString(),
         }, { onConflict: "city_key,voivodeship" });
         if (error) throw error;
-        return { ...location, ...stats };
+        return { ...location, ...aggregateStats, transactions_saved: stats.transactions.length };
       } catch (error) {
-        return { ...location, error: String(error).slice(0, 500) };
+        const message = error instanceof Error ? error.message : JSON.stringify(error);
+        return { ...location, error: message.slice(0, 500) };
       }
     }));
-    const { error: analysisError } = await db.rpc("recompute_flip_analysis");
-    if (analysisError) throw analysisError;
     return json({ ok: results.every((result) => !("error" in result)), refreshed: results.length, results });
   } catch (error) {
     console.error(error);
-    return json({ error: String(error) }, 500);
+    return json({ error: error instanceof Error ? error.message : JSON.stringify(error) }, 500);
   }
 });

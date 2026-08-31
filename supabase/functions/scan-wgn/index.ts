@@ -46,6 +46,23 @@ function phone(text: string) {
   return match ? match[1].replace(/\D/g, "") : null;
 }
 
+function images(html: string, base: string) {
+  const result: string[] = [];
+  const metaImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1];
+  const candidates = [metaImage, ...[...html.matchAll(/<img\b[^>]+(?:src|data-src)=["']([^"']+)["']/gi)].map((match) => match[1])];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate.replace(/&amp;/g, "&"), base);
+      if (!/^https?:$/.test(url.protocol) || /logo|icon|avatar|spinner|placeholder/i.test(url.pathname)) continue;
+      if (!result.includes(url.toString())) result.push(url.toString());
+      if (result.length >= 12) break;
+    } catch {}
+  }
+  return result;
+}
+
 async function request(url: string) {
   const response = await fetch(url, {
     headers: {
@@ -124,6 +141,7 @@ Deno.serve(async (req) => {
           contact_phone: contactPhone,
           contact_email: contactEmail,
           seller_type: "agent",
+          image_urls: images(detail.html, detail.url),
           last_seen_at: new Date().toISOString(),
         }, { onConflict: "source,source_offer_id" });
         if (error) throw error;
@@ -135,8 +153,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { error: analysisError } = await db.rpc("recompute_flip_analysis");
-    if (analysisError) errors.push(`analysis: ${analysisError.message}`);
     const status = parsed > 0 ? "ok" : errors.length ? "error" : "no_offers";
     await db.from("source_health").upsert({
       source: "wgn",
